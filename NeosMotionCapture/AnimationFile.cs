@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using FrooxEngine;
+using BaseX;
 
 namespace NeosMotionCapture
 {
@@ -24,7 +25,7 @@ namespace NeosMotionCapture
         /// <summary>
         /// All the frames in this animation.
         /// </summary>
-        public readonly List<AnimationFrame> Frames;
+        public readonly List<AnimationFrame> Frames = new List<AnimationFrame>();
 
         /// <summary>
         /// A map mapping each slot to its name in the animation.
@@ -32,25 +33,43 @@ namespace NeosMotionCapture
         /// </summary>
         public readonly Dictionary<Slot, string> NameMap = new Dictionary<Slot, string>();
 
+        /// <summary>
+        /// The offset positions of each slot.
+        /// </summary>
+        public readonly Dictionary<string, float3> Offsets = new Dictionary<string, float3>();
+
+        public double FrameTimeMillis = 33.3333;
+
         public AnimationFile(Slot slot)
         {
             this.Slot = slot;
-            AddToNameMap(slot);
+            InitSlot(slot, true);
         }
 
         public AnimationFile(Slot slot, Slot parent)
         {
             this.Slot = slot;
             this.Parent = parent;
-            AddToNameMap(slot);
+            InitSlot(slot, true);
         }
 
-        protected void AddToNameMap(Slot slot)
+        protected void InitSlot(Slot slot, bool isRoot)
         {
-            NameMap.Add(slot, GenerateUniqueName(slot.Name));
+            string name = GenerateUniqueName(slot.Name);
+            NameMap.Add(slot, name);
+            
+            if (isRoot)
+            {
+                Offsets.Add(name, new float3(0, 0, 0))
+;           }
+            else
+            {
+                Offsets.Add(name, slot.LocalPosition);
+            }
+
             foreach(Slot child in slot.Children)
             {
-                AddToNameMap(child);
+                InitSlot(child, false);
             }
         }
 
