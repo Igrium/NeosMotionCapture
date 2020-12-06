@@ -4,6 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Libraries\</OutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="BaseX">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\NeosVR\BaseX.dll</HintPath>

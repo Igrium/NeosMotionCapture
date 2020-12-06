@@ -7,6 +7,7 @@ using System.IO;
 using FrooxEngine;
 using FrooxEngine.LogiX;
 using NeosMotionCapture.Encoding;
+using BaseX;
 
 /// <summary>
 /// Component responsible for performing motion capture on a list of 
@@ -24,14 +25,14 @@ namespace NeosMotionCapture
         /// <summary>
         /// The frame rate to record in.
         /// </summary>
-        public readonly Sync<float> FrameRate = new Sync<float> { Value = 30 };
+        public readonly Sync<float> FrameRate;
 
         /// <summary>
         /// Whether this component is recording on any client.
         /// </summary>
         public readonly Sync<bool> IsRecording;
 
-        public readonly Sync<Binary> Output;
+        public readonly SyncRef<StaticBinary> Output;
 
         /// <summary>
         /// Whether we're recording on this client.
@@ -67,6 +68,7 @@ namespace NeosMotionCapture
             {
                 ClientRecording = false;
                 IsRecording.Value = false;
+                Save();
             }
         }
 
@@ -80,18 +82,27 @@ namespace NeosMotionCapture
         public void Save()
         {
             // Encode and save to file.
-            string fileName = DateTime.UtcNow.ToString() + ".bvh";
+            string fileName = DateTime.UtcNow.ToString("yyyy-dd-M--HH-mm-ss") + ".bvh";
             string filePath = Path.Combine(Path.GetTempPath(), fileName);
+
+            UniLog.Log("Recording Name: " + fileName);
+            UniLog.Log("Temp Path: " + Path.GetTempPath());
+            UniLog.Log("Recording File Path: " + filePath);
 
             FileStream fs = File.Create(filePath);
             Encoder.EncodeAnimationSet(RecordingCache, fs);
             fs.Close();
 
-            // Load the new asset into Neos.
+
+            // Load the new asset into Neos DB.
             Uri uri = Engine.LocalDB.ImportLocalAsset(filePath, LocalDB.ImportLocation.Move);
-            Binary asset = new Binary();
-            asset.SetURL(uri);
-            Output.Value = asset;
+            Binary binary = new Binary();
+            binary.SetURL(uri);
+            UniLog.Log("Recording URL: " + uri.ToString());
+
+            // Spawn into world.
+            Output.Target.URL.Value = uri;
+
         }
 
         protected override void OnCommonUpdate()
@@ -107,6 +118,12 @@ namespace NeosMotionCapture
                     lastUpdate = DateTime.UtcNow;
                 }
             }
+        }
+
+        protected override void OnAwake()
+        {
+            base.OnAwake();
+            FrameRate.Value = 30;
         }
 
         protected static float FrameTimeMillis(float frameRate)
