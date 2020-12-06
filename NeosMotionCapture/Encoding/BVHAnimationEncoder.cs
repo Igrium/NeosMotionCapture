@@ -76,13 +76,14 @@ namespace NeosMotionCapture.Encoding
             List<AnimationFrame> frames = animation.Frames;
             file.WriteLine("MOTION");
             file.WriteLine("Frames: " + frames.Count);
-            file.WriteLine("Frame Time: " + animation.FrameTimeMillis * 1000);
+            file.WriteLine("Frame Time: " + animation.FrameTimeMillis / 1000);
 
             void writeNode(AnimationFrame node)
             {
-                // Convert quaternion to euler
-                float3 rotation = node.Rotation.xyz;
-                file.Write(node.Position.x + " " + node.Position.y + " " + node.Position.z + " " + rotation.x + " " + rotation.y + " " + rotation.z);
+                // Convert quaternion to euler and radians to degrees.
+                float3 rotation = (float3)(node.Rotation.xyz * (180/Math.PI));
+                
+                file.Write(node.Position.x + " " + node.Position.y + " " + node.Position.z + " " + rotation.x + " " + rotation.y + " " + rotation.z + " ");
 
                 if (node.Children.Count > 0)
                 {
@@ -96,6 +97,7 @@ namespace NeosMotionCapture.Encoding
             for (int i = 0; i < frames.Count; i++)
             {
                 writeNode(frames[i]);
+                file.WriteLine("");
             }
         }
     }
