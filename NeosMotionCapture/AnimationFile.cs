@@ -75,14 +75,17 @@ namespace NeosMotionCapture
 
         public void Capture()
         {
+            AnimationFrame frame = null;
             if (Parent != null)
             {
-                Frames.Add(new AnimationFrame(Slot, Parent, NameMap));
+                frame = new AnimationFrame(Slot, Parent, NameMap);
             } 
             else
             {
-                Frames.Add(new AnimationFrame(Slot, new BaseX.float3(0, 0, 0), NameMap));
+                frame = new AnimationFrame(Slot, new BaseX.float3(0, 0, 0), NameMap);
             }
+            frame.LoadChildren(Slot, NameMap);
+            Frames.Add(frame);
         }
 
         private string GenerateUniqueName(string name)

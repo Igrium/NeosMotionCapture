@@ -27,7 +27,6 @@ namespace NeosMotionCapture
             Rotation = slot.LocalRotation;
 
             LoadName(slot, nameMap);
-            LoadChildren(slot, nameMap);
         }
 
         /// <summary>
@@ -41,7 +40,6 @@ namespace NeosMotionCapture
             Rotation = slot.GlobalRotation;
 
             LoadName(slot, nameMap);
-            LoadChildren(slot, nameMap);
         }
 
         /// <summary>
@@ -55,7 +53,6 @@ namespace NeosMotionCapture
             Rotation = slot.GlobalRotation - parent.GlobalRotation;
 
             LoadName(slot, nameMap);
-            LoadChildren(slot, nameMap);
         }
 
         public AnimationFrame(float3 position, floatQ rotation, string name)
@@ -64,6 +61,7 @@ namespace NeosMotionCapture
             this.Rotation = rotation;
             this.Name = name;
         }
+
 
         private void LoadName(Slot slot, Dictionary<Slot, string> nameMap)
         {
@@ -75,14 +73,53 @@ namespace NeosMotionCapture
             {
                 Name = slot.Name;
             }
+
         }
 
-        private void LoadChildren(Slot slot, Dictionary<Slot, string> nameMap)
+        /// <summary>
+        /// Load all the children of this frame, determining if any of them need to be captured.
+        /// </summary>
+        /// <param name="slot"></param>
+        /// <param name="nameMap"></param>
+        /// <returns>Whether this or any of its children need to be captured.</returns>
+        public bool LoadChildren(Slot slot, Dictionary<Slot, string> nameMap)
         {
+            bool childrenCaptured = ShouldSlotBeCaptured(slot);
             foreach (Slot child in slot.Children)
             {
-                Children.Add(new AnimationFrame(child, nameMap));
+                AnimationFrame frame = new AnimationFrame(child, nameMap);
+                if (frame.LoadChildren(child, nameMap))
+                {
+                    childrenCaptured = true;
+                    // Only add the child to the list if it should be captured.
+                    Children.Add(frame);
+                }
             }
+            return childrenCaptured;
+        }
+
+        /// <summary>
+        /// Determine whether a slot should be recorded.
+        /// Useful for sorting out pure-logic slots.
+        /// </summary>
+        /// <param name="slot"></param>
+        /// <returns></returns>
+        public static bool ShouldSlotBeCaptured(Slot slot)
+        {
+            foreach (Component component in slot.Components)
+            {
+                if (component.GetType().IsAssignableFrom(typeof(MeshRenderer)))
+                {
+                    return true;
+                }
+                else if (component.GetType().IsAssignableFrom(typeof(Comment)))
+                {
+                    Comment comment = (Comment)component;
+                    if (comment.Text.Value == "CaptureMotion") { return true; }
+                }
+            }
+
+            return false;
         }
     }
 }
